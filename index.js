@@ -1,0 +1,157 @@
+var createError = require('http-errors');
+var express = require('express');
+var path = require('path');
+var cookieParser = require('cookie-parser');
+var logger = require('morgan');
+var debug = require('debug')('mmwave-demo:server');
+
+var indexRouter = require('./routes/index');
+let controlRouter = require('./routes/control')
+
+var app = express();
+
+// view engine setup
+app.set('views', path.join(__dirname, 'views'));
+app.set('view engine', 'ejs');
+
+app.use(logger('dev'));
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser());
+app.use(express.static(path.join(__dirname, 'public')));
+
+app.use('/', indexRouter);
+app.use('/contorl', controlRouter);
+
+// catch 404 and forward to error handler
+app.use(function (req, res, next) {
+  next(createError(404));
+});
+
+// error handler
+app.use(function (err, req, res, next) {
+  // set locals, only providing error in development
+  res.locals.message = err.message;
+  res.locals.error = req.app.get('env') === 'development' ? err : {};
+
+  // render the error page
+  res.status(err.status || 500);
+  res.render('error');
+});
+
+const parser = require('./lib/data-parser')
+parser.listen()
+  .on('data', data => {
+    console.log('data', data)
+    global.io.emit('data', data)
+  })
+
+const SerialPort = require('./lib/serialport')
+const com1 = new SerialPort.SerialTraceClient('COM1')
+com1.listen()
+  .on('data', data => {
+    parser.parse(data)
+  })
+  .on('ports', ports => {
+    global.io.emit('ports', ports)
+  })
+  .on('status', (status, port) => {
+    //console.log('status', status, port)
+    global.io.emit('status', status, port)
+  })
+
+
+/**
+ * Get port from environment and store in Express.
+ */
+
+app.set('port', normalizePort(process.env.PORT || '3000'))
+
+/**
+ * Create HTTP server.
+ */
+
+var server = require('http').createServer(app)
+global.io = require('socket.io')(server)
+global.io
+  .on('connect', socket => {
+    console.log('a client connected, ID:', socket.id)
+
+    SerialPort.list()
+      .then(ports => {
+        global.io.emit('ports', ports)
+      })
+      .catch(err => {
+        console.log(err)
+      })
+
+  })
+
+/**
+ * Listen on provided port, on all network interfaces.
+ */
+
+server.listen(port);
+server.on('error', onError);
+server.on('listening', onListening);
+
+/**
+ * Normalize a port into a number, string, or false.
+ */
+
+function normalizePort(val) {
+  var port = parseInt(val, 10);
+
+  if (isNaN(port)) {
+    // named pipe
+    return val;
+  }
+
+  if (port >= 0) {
+    // port number
+    return port;
+  }
+
+  return false;
+}
+
+/**
+ * Event listener for HTTP server "error" event.
+ */
+
+function onError(error) {
+  if (error.syscall !== 'listen') {
+    throw error;
+  }
+
+  var bind = typeof port === 'string'
+    ? 'Pipe ' + port
+    : 'Port ' + port;
+
+  // handle specific listen errors with friendly messages
+  switch (error.code) {
+    case 'EACCES':
+      console.error(bind + ' requires elevated privileges');
+      process.exit(1);
+      break;
+    case 'EADDRINUSE':
+      console.error(bind + ' is already in use');
+      process.exit(1);
+      break;
+    default:
+      throw error;
+  }
+}
+
+/**
+ * Event listener for HTTP server "listening" event.
+ */
+
+function onListening() {
+  var addr = server.address();
+  var bind = typeof addr === 'string'
+    ? 'pipe ' + addr
+    : 'port ' + addr.port;
+  debug('Listening on ' + bind);
+}
+

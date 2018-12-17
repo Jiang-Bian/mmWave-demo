@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>DEMO - Einstein mmWave Radar</title>
+  <!-- 引入 echarts.js -->
+  <script src="./lib/echarts.js"></script>
+  <script src="./lib/echarts-gl.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+
+</head>
+
+<body>
+  Please select COM port:<select id="ports"> </select> <input id="submit" type="button" value='connect' onclick=""><br>
+  CONNECTION: <input id="status" type="text" /><br>
+
+  <!-- 为ECharts准备一个具备大小（宽高）的Dom -->
+  <div id="scatter" style="width: 1000px;height:700px;"></div>
+  <script type="text/javascript">
+    let myChart = echarts.init(document.getElementById('scatter'))
+    myChart.setOption({
+      grid3D: {},
+      xAxis3D: {},
+      yAxis3D: {},
+      zAxis3D: { max: 100 },
+      series: [{
+        type: 'scatter3D',
+        data: null
+      }]
+    })
+
+    const socket = io()
+    socket
+      .on('status', (status, port) => {
+        document.getElementById('status').value = status
+      })
+      .on('ports', ports => {
+        let portsSelect = document.getElementById("ports");
+        portsSelect.innerText = null
+        ports.forEach(port => {
+          let option = document.createElement("option");
+          option.text = port.comName;
+          portsSelect.add(option);
+        });
+      })
+      .on('data', data => {
+        // 使用指定的配置项和数据显示图表。
+        myChart.setOption({
+          grid3D: {},
+          xAxis3D: {},
+          yAxis3D: {},
+          zAxis3D: { max: 100 },
+          series: [{
+            type: 'scatter3D',
+            data: data
+          }]
+        })
+      })
+  </script>
+</body>
+
+</html>
