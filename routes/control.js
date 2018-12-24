@@ -31,8 +31,7 @@ router.post('/connect', (req, res) => {
     res.status(500)
   }
   try {
-    (new SerialPort.SerialTraceClient(req.body.port))
-      .listen()
+    (new SerialPort.SerialTraceClient(req.body.port)).listen()
       .on('data', data => {
         try {
           dataParser.parse(data)
