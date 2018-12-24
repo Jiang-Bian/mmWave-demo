@@ -12,8 +12,11 @@
 </head>
 
 <body>
-  Please select COM port:<select id="ports"> </select> <input id="submit" type="button" value='connect' onclick=""><br>
-  CONNECTION: <input id="status" type="text" /><br>
+  <form action="/control/connect" method="post">
+    Please select COM port:<select id="port" name="port"> </select> <br>
+    <input type="submit" name="connect" value="connect" /> 
+  </form>
+   CONNECTION: <input id="status" type="text" onclick="" readonly/><br>
 
   <!-- 为ECharts准备一个具备大小（宽高）的Dom -->
   <div id="scatter" style="width: 1000px;height:700px;"></div>
@@ -36,7 +39,7 @@
         document.getElementById('status').value = status
       })
       .on('ports', ports => {
-        let portsSelect = document.getElementById("ports");
+        let portsSelect = document.getElementById("port");
         portsSelect.innerText = null
         ports.forEach(port => {
           let option = document.createElement("option");

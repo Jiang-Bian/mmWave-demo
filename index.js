@@ -21,7 +21,7 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
-app.use('/contorl', controlRouter);
+app.use('/control', controlRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
@@ -39,28 +39,6 @@ app.use(function (err, req, res, next) {
   res.render('error');
 });
 
-const parser = require('./lib/data-parser')
-parser.listen()
-  .on('data', data => {
-    console.log('data', data)
-    global.io.emit('data', data)
-  })
-
-const SerialPort = require('./lib/serialport')
-const com1 = new SerialPort.SerialTraceClient('COM1')
-com1.listen()
-  .on('data', data => {
-    parser.parse(data)
-  })
-  .on('ports', ports => {
-    global.io.emit('ports', ports)
-  })
-  .on('status', (status, port) => {
-    //console.log('status', status, port)
-    global.io.emit('status', status, port)
-  })
-
-
 /**
  * Get port from environment and store in Express.
  */
@@ -77,6 +55,7 @@ global.io
   .on('connect', socket => {
     console.log('a client connected, ID:', socket.id)
 
+    const SerialPort = require('./lib/serialport')
     SerialPort.list()
       .then(ports => {
         global.io.emit('ports', ports)
@@ -91,7 +70,7 @@ global.io
  * Listen on provided port, on all network interfaces.
  */
 
-server.listen(port);
+server.listen(3000);
 server.on('error', onError);
 server.on('listening', onListening);
 
