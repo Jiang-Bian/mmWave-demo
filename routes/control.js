@@ -5,9 +5,14 @@ const dataParser = require('../lib/data-parser')
 
 dataParser.listen()
   .on('data', data => {
+    console.log(data)
     let coordinateData = []
     for (let obj of data.objs) {
-      coordinateData.push([obj.x, obj.y, obj.z])
+      coordinateData.push([
+        obj.x / Math.pow(2, data.xyzQFormat),
+        obj.y / Math.pow(2, data.xyzQFormat),
+        obj.z / Math.pow(2, data.xyzQFormat)
+      ])
     }
     console.log(coordinateData)
     global.io.emit('data', coordinateData)

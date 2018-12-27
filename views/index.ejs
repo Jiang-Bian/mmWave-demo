@@ -32,8 +32,8 @@
         client supports video/camera, but for the sake of illustrating the 
         elements involved, they are created with markup (not JavaScript)
       -->
-        <video id="video" width="480" height="360" autoplay></video>
-        <canvas id="canvas" width="480" height="360"></canvas>
+          <video id="video" width="480" height="360" autoplay></video>
+          <canvas id="canvas" width="480" height="360"></canvas>
         </div>
       </td>
     </tr>
@@ -43,9 +43,9 @@
     let myChart = echarts.init(document.getElementById('scatter'))
     myChart.setOption({
       grid3D: {},
-      xAxis3D: {},
-      yAxis3D: {},
-      zAxis3D: { max: 100 },
+      xAxis3D: { min: -10, max: 10 },
+      yAxis3D: { min: 0, max: 20 },
+      zAxis3D: { min: 0, max: 20 },
       series: [{
         type: 'scatter3D',
         data: null
@@ -70,9 +70,9 @@
         // 使用指定的配置项和数据显示图表。
         myChart.setOption({
           grid3D: {},
-          xAxis3D: {},
-          yAxis3D: {},
-          zAxis3D: { max: 100 },
+          xAxis3D: { min: -10, max: 10 },
+          yAxis3D: { min: 0, max: 50 },
+          zAxis3D: { min: 0, max: 10 },
           series: [{
             type: 'scatter3D',
             data: data
