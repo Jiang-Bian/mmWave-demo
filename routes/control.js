@@ -3,9 +3,11 @@ const router = express.Router();
 const SerialPort = require('../lib/serialport')
 const dataParser = require('../lib/data-parser')
 
+let serialPort = null
+
 dataParser.listen()
   .on('data', data => {
-    console.log(data)
+    //console.log(data)
     let coordinateData = []
     for (let obj of data.objs) {
       coordinateData.push([
@@ -14,7 +16,7 @@ dataParser.listen()
         obj.z / Math.pow(2, data.xyzQFormat)
       ])
     }
-    console.log(coordinateData)
+    //console.log(coordinateData)
     global.io.emit('data', coordinateData)
   })
 
@@ -31,12 +33,15 @@ router.get('/list', (req, res, ) => {
 
 router.post('/connect', (req, res) => {
   let port = null
-  console.log(req.body.port)
+  console.log('port:', req.body.port)
   if (!req.body.port) {
-    res.status(500)
+    res.sendStatus(500).json({ port: req.body.port })
+    return
   }
+
   try {
-    (new SerialPort.SerialTraceClient(req.body.port)).listen()
+    serialPort = new SerialPort.SerialTraceClient(req.body.port)
+    serialPort.listen()
       .on('data', data => {
         try {
           dataParser.parse(data)
@@ -45,14 +50,32 @@ router.post('/connect', (req, res) => {
           return
         }
       })
-      .on('status', (status, port) => {
-        global.io.emit('status', status, port)
+      .on('sendStatus', (sendStatus, port) => {
+        global.io.emit('sendStatus', sendStatus, port)
       })
-    res.status(200)
+    res.sendStatus(200)
   } catch (err) {
     console.log(err)
-    res.status(500)
-    //global.io.emit('status', 'ERROR', port)
+    res.sendStatus(500).json({ err })
+    global.io.emit('sendStatus', 'ERROR', port)
+  }
+})
+
+router.post('/disconnect', (req, res) => {
+  console.log('port:', req.body.port)
+  if (!serialPort) {
+    res.sendStatus(500).json({ err: 'not yet startted' })
+    return
+  }
+
+  try {
+    serialPort.disconnect()
+    serialPort = null
+    res.sendStatus(200)
+  } catch (err) {
+    console.log(err)
+    res.sendStatus(500).json({ err })
+    global.io.emit('sendStatus', 'ERROR', port)
   }
 })
 

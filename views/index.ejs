@@ -12,10 +12,12 @@
 </head>
 
 <body>
-  <form action="/control/connect" method="post">
-    Please select COM port: <select id="port" name="port"> </select>
-    <input type="submit" name="connect" value="connect" />
-  </form>
+
+  Please select COM port: <select id="port" name="port"> </select>
+  <input type="submit" name="connect" value="connect" onclick="connect()" />
+  <input type="submit" name="disconnect" value="disconnect" onclick="disconnect()" />
+  
+  <br>
   CONNECTION: <input id="status" type="text" onclick="" readonly /><br>
 
   <table width="100%">
@@ -32,7 +34,7 @@
         client supports video/camera, but for the sake of illustrating the 
         elements involved, they are created with markup (not JavaScript)
       -->
-          <video id="video" width="480" height="360" autoplay></video>
+          <video id="video" width="480" height="360" autoplay="false"></video>
           <canvas id="canvas" width="480" height="360"></canvas>
         </div>
       </td>
@@ -40,6 +42,22 @@
   </table>
 
   <script type="text/javascript">
+    function connect() {
+      var xhttp = new XMLHttpRequest();
+      xhttp.open("POST", "/control/connect", true);
+      xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+      port = document.getElementById('port').value
+      xhttp.send("port=" + port);
+    }
+
+    function disconnect() {
+      var xhttp = new XMLHttpRequest();
+      xhttp.open("POST", "/control/disconnect", true);
+      xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+      port = document.getElementById('port').value
+      xhttp.send("port=" + port);
+    }
+
     let myChart = echarts.init(document.getElementById('scatter'))
     myChart.setOption({
       grid3D: {},
