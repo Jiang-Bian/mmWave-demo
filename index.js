@@ -96,7 +96,7 @@ function startStreaming() {
     return;
   }
 
-  var args = ["-w", "480", "-h", "360", "-o", "./public/image_stream.jpg", "-t", "999999999", "-tl", "100"];
+  var args = ["-w", "480", "-h", "360", "-o", "./public/image_stream.jpg","-e","jpg","-ex","auto","-br","85", "-co","80", "-t", "999999999", "-tl", "10"];
   proc = spawn('raspistill', args);
   console.log('Watching for changes...')
 
@@ -109,7 +109,7 @@ function startStreaming() {
 /**
  * Listen on provided port, on all network interfaces.
  */
-server.listen(3000)
+server.listen(80)
 server.on('error', onError)
 server.on('listening', onListening)
 
