@@ -1,85 +1,127 @@
-var createError = require('http-errors');
-var express = require('express');
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
-var debug = require('debug')('mmwave-demo:server');
+const createError = require('http-errors')
+const express = require('express')
+const path = require('path')
+const cookieParser = require('cookie-parser')
+const logger = require('morgan')
+const debug = require('debug')('mmwave-demo:server')
+const spawn = require('child_process').spawn
+const fs = require('fs')
 
-var indexRouter = require('./routes/index');
-let controlRouter = require('./routes/control')
+const indexRouter = require('./routes/index');
+const controlRouter = require('./routes/control')
 
-var app = express();
+let app = express()
+let proc = null
 
 // view engine setup
-app.set('views', path.join(__dirname, 'views'));
+app.set('views', path.join(__dirname, 'views'))
 app.set('view engine', 'ejs');
 
-app.use(logger('dev'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+app.use(logger('dev'))
+app.use(express.json())
+app.use(express.urlencoded({ extended: false }))
 app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public')))
 
-app.use('/', indexRouter);
-app.use('/control', controlRouter);
+app.use('/', indexRouter)
+app.use('/control', controlRouter)
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
-  next(createError(404));
-});
+  next(createError(404))
+})
 
 // error handler
 app.use(function (err, req, res, next) {
   // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
+  res.locals.message = err.message
+  res.locals.error = req.app.get('env') === 'development' ? err : {}
 
   // render the error page
-  res.status(err.status || 500);
-  res.render('error');
-});
+  res.status(err.status || 500)
+  res.render('error')
+})
 
 /**
  * Get port from environment and store in Express.
  */
-
 app.set('port', normalizePort(process.env.PORT || '3000'))
 
 /**
  * Create HTTP server.
  */
-
-var server = require('http').createServer(app)
+const server = require('http').createServer(app)
 global.io = require('socket.io')(server)
+
+let sockets = {}
 global.io
   .on('connect', socket => {
-    console.log('a client connected, ID:', socket.id)
+    sockets[socket.id] = socket
+    console.log("Total clients connected : ", Object.keys(sockets).length)
+
+    socket
+      .on('disconnect', () => {
+        delete sockets[socket.id]
+        if (Object.keys(sockets).length == 0) {
+          app.set('watchingFile', false)
+          fs.unwatchFile('./stream/image_stream.jpg')
+          if (proc) proc.kill()
+        }
+      })
+      .on('start-stream', () => {
+        startStreaming()
+      })
 
     const SerialPort = require('./lib/serialport')
     SerialPort.list()
       .then(ports => {
-        global.io.emit('ports', ports)
+        socket.emit('ports', ports)
       })
       .catch(err => {
         console.log(err)
       })
-
   })
+
+function stopStreaming() {
+  if (Object.keys(sockets).length == 0) {
+    app.set('watchingFile', false);
+    if (proc) proc.kill();
+    fs.unwatchFile('./stream/image_stream.jpg');
+  }
+}
+
+function startStreaming() {
+  if (app.get('watchingFile')) {
+    io.sockets.emit('liveStream', 'image_stream.jpg?_t=' + (Math.random() * 100000));
+    return;
+  }
+
+  var args = ["-w", "640", "-h", "480", "-o", "./stream/image_stream.jpg", "-t", "999999999", "-tl", "100"];
+  proc = spawn('raspistill', args);
+
+  console.log('Watching for changes...');
+
+  app.set('watchingFile', true);
+
+  fs.watchFile('./stream/image_stream.jpg', function (current, previous) {
+    global.io.emit('liveStream', 'image_stream.jpg?_t=' + (Math.random() * 100000));
+  })
+
+}
 
 /**
  * Listen on provided port, on all network interfaces.
  */
-
-server.listen(3000);
-server.on('error', onError);
-server.on('listening', onListening);
+server.listen(3000)
+server.on('error', onError)
+server.on('listening', onListening)
 
 /**
  * Normalize a port into a number, string, or false.
  */
 
 function normalizePort(val) {
-  var port = parseInt(val, 10);
+  var port = parseInt(val, 10)
 
   if (isNaN(port)) {
     // named pipe
@@ -110,12 +152,12 @@ function onError(error) {
   // handle specific listen errors with friendly messages
   switch (error.code) {
     case 'EACCES':
-      console.error(bind + ' requires elevated privileges');
-      process.exit(1);
+      console.error(bind + ' requires elevated privileges')
+      process.exit(1)
       break;
     case 'EADDRINUSE':
-      console.error(bind + ' is already in use');
-      process.exit(1);
+      console.error(bind + ' is already in use')
+      process.exit(1)
       break;
     default:
       throw error;
@@ -125,12 +167,11 @@ function onError(error) {
 /**
  * Event listener for HTTP server "listening" event.
  */
-
 function onListening() {
-  var addr = server.address();
+  var addr = server.address()
   var bind = typeof addr === 'string'
     ? 'pipe ' + addr
     : 'port ' + addr.port;
-  debug('Listening on ' + bind);
+  debug('Listening on ' + bind)
 }
 

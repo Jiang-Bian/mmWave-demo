@@ -16,7 +16,7 @@ dataParser.listen()
         obj.z / Math.pow(2, data.xyzQFormat)
       ])
     }
-    //console.log(coordinateData)
+    console.log(coordinateData)
     global.io.emit('data', coordinateData)
   })
 
@@ -39,6 +39,11 @@ router.post('/connect', (req, res) => {
     return
   }
 
+  if (port!=null) {
+    res.sendStatus(200).json({ port: req.body.port })
+    return
+  }
+
   try {
     serialPort = new SerialPort.SerialTraceClient(req.body.port)
     serialPort.listen()
@@ -50,21 +55,21 @@ router.post('/connect', (req, res) => {
           return
         }
       })
-      .on('sendStatus', (sendStatus, port) => {
-        global.io.emit('sendStatus', sendStatus, port)
+      .on('status', (sendStatus, port) => {
+        global.io.emit('status', sendStatus, port)
       })
     res.sendStatus(200)
   } catch (err) {
     console.log(err)
     res.sendStatus(500).json({ err })
-    global.io.emit('sendStatus', 'ERROR', port)
+    global.io.emit('status', 'ERROR', port)
   }
 })
 
 router.post('/disconnect', (req, res) => {
   console.log('port:', req.body.port)
   if (!serialPort) {
-    res.sendStatus(500).json({ err: 'not yet startted' })
+    res.sendStatus(404).json({ err: 'not yet startted' })
     return
   }
 
@@ -75,7 +80,7 @@ router.post('/disconnect', (req, res) => {
   } catch (err) {
     console.log(err)
     res.sendStatus(500).json({ err })
-    global.io.emit('sendStatus', 'ERROR', port)
+    global.io.emit('status', 'ERROR', port)
   }
 })
 

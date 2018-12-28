@@ -16,7 +16,7 @@
   Please select COM port: <select id="port" name="port"> </select>
   <input type="submit" name="connect" value="connect" onclick="connect()" />
   <input type="submit" name="disconnect" value="disconnect" onclick="disconnect()" />
-  
+
   <br>
   CONNECTION: <input id="status" type="text" onclick="" readonly /><br>
 
@@ -28,14 +28,18 @@
         </div>
       </td>
       <td width="40%" align="center">
-        <div id="camera" style="width: 480px;height:360px;display:inline-block;vertical-align: bottom;">
-          <!--
+        <!--        
+
         Ideally these elements aren't created until it's confirmed that the 
         client supports video/camera, but for the sake of illustrating the 
         elements involved, they are created with markup (not JavaScript)
-      -->
+<div id="camera" style="width: 480px;height:360px;display:inline-block;vertical-align: bottom;">      
           <video id="video" width="480" height="360" autoplay="false"></video>
           <canvas id="canvas" width="480" height="360"></canvas>
+          -->
+          <img src="" id="stream"><br>
+          <button type="button" id="startStream" onclick="startStream()">Start Camera</button>
+
         </div>
       </td>
     </tr>
@@ -43,19 +47,19 @@
 
   <script type="text/javascript">
     function connect() {
-      var xhttp = new XMLHttpRequest();
-      xhttp.open("POST", "/control/connect", true);
-      xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+      var xhttp = new XMLHttpRequest()
+      xhttp.open("POST", "/control/connect", true)
+      xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded")
       port = document.getElementById('port').value
-      xhttp.send("port=" + port);
+      xhttp.send("port=" + port)
     }
 
     function disconnect() {
-      var xhttp = new XMLHttpRequest();
-      xhttp.open("POST", "/control/disconnect", true);
-      xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+      var xhttp = new XMLHttpRequest()
+      xhttp.open("POST", "/control/disconnect", true)
+      xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded")
       port = document.getElementById('port').value
-      xhttp.send("port=" + port);
+      xhttp.send("port=" + port)
     }
 
     let myChart = echarts.init(document.getElementById('scatter'))
@@ -72,17 +76,21 @@
 
     const socket = io()
     socket
+      .on('liveStream', url => {
+        document.getElementById('stream').attr('src', url)
+        //$('.start').hide()
+      })
       .on('status', (status, port) => {
         document.getElementById('status').value = status
       })
       .on('ports', ports => {
-        let portsSelect = document.getElementById("port");
+        let portsSelect = document.getElementById("port")
         portsSelect.innerText = null
         ports.forEach(port => {
-          let option = document.createElement("option");
-          option.text = port.comName;
-          portsSelect.add(option);
-        });
+          let option = document.createElement("option")
+          option.text = port.comName
+          portsSelect.add(option)
+        })
       })
       .on('data', data => {
         // 使用指定的配置项和数据显示图表。
@@ -98,17 +106,22 @@
         })
       })
 
-    var video = document.getElementById('video');
-
-    // Get access to the camera!
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-      // Not adding `{ audio: true }` since we only want video now
-      navigator.mediaDevices.getUserMedia({ video: true }).then(function (stream) {
-        //video.src = window.URL.createObjectURL(stream);
-        video.srcObject = stream;
-        video.play();
-      });
+    function startStream() {
+      socket.emit('start-stream')
+      //document.getElementById('startStream').hide()
     }
+
+    // var video = document.getElementById('video')
+
+    // // Get access to the camera!
+    // if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    //   // Not adding `{ audio: true }` since we only want video now
+    //   navigator.mediaDevices.getUserMedia({ video: true }).then(function (stream) {
+    //     //video.src = window.URL.createObjectURL(stream)
+    //     video.srcObject = stream
+    //     video.play()
+    //   })
+    // }
 
   </script>
 </body>
