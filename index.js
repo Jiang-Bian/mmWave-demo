@@ -64,7 +64,7 @@ global.io
         delete sockets[socket.id]
         if (Object.keys(sockets).length == 0) {
           app.set('watchingFile', false)
-          fs.unwatchFile('./stream/image_stream.jpg')
+          fs.unwatchFile('./public/image_stream.jpg')
           if (proc) proc.kill()
         }
       })
@@ -86,7 +86,7 @@ function stopStreaming() {
   if (Object.keys(sockets).length == 0) {
     app.set('watchingFile', false);
     if (proc) proc.kill();
-    fs.unwatchFile('./stream/image_stream.jpg');
+    fs.unwatchFile('./public/image_stream.jpg');
   }
 }
 
@@ -96,17 +96,14 @@ function startStreaming() {
     return;
   }
 
-  var args = ["-w", "640", "-h", "480", "-o", "./stream/image_stream.jpg", "-t", "999999999", "-tl", "100"];
+  var args = ["-w", "480", "-h", "360", "-o", "./public/image_stream.jpg", "-t", "999999999", "-tl", "100"];
   proc = spawn('raspistill', args);
-
-  console.log('Watching for changes...');
+  console.log('Watching for changes...')
 
   app.set('watchingFile', true);
-
-  fs.watchFile('./stream/image_stream.jpg', function (current, previous) {
+  fs.watchFile('./public/image_stream.jpg', function (current, previous) {
     global.io.emit('liveStream', 'image_stream.jpg?_t=' + (Math.random() * 100000));
   })
-
 }
 
 /**
