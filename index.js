@@ -45,7 +45,7 @@ app.use(function (err, req, res, next) {
 /**
  * Get port from environment and store in Express.
  */
-app.set('port', normalizePort(process.env.PORT || '3000'))
+app.set('port', normalizePort(process.env.PORT || '80'))
 
 /**
  * Create HTTP server.
@@ -96,7 +96,7 @@ function startStreaming() {
     return;
   }
 
-  var args = ["-w", "480", "-h", "360", "-o", "./public/image_stream.jpg","-e","jpg","-ex","auto","-br","85", "-co","80", "-t", "999999999", "-tl", "10"];
+  var args = ["-w", "480", "-h", "360", "-o", "./public/image_stream.jpg","-e","jpg","-ex","auto","-br","85", "-co","80", "-t", "999999999", "-tl", "100", "&"];
   proc = spawn('raspistill', args);
   console.log('Watching for changes...')
 
